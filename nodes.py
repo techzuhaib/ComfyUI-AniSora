@@ -68,10 +68,10 @@ class AniSora:
                 "ckpt_dir": ("MODEL",),
                 "prompt": ("PROMPT",),
                 "size": ("STRING", {"default": "1280*720"}),
-                "frame_num": ("INT", {"default": 81}),
-                "ulysses_size": ("INT", {"default": 4}),
+                "frame_num": ("INT", {"default": 49}),
+                "ulysses_size": ("INT", {"default": 1}),
                 "ring_size": ("INT", {"default": 1}),
-                "base_seed": ("INT", {"default": "42"}),
+                "base_seed": ("INT", {"default": "4096"}),
                 "sample_solver": ("STRING", {"default": ['unipc', 'dpm++']}),
                 "sample_steps": ("INT", {"default": 50}),
                 "sample_shift": ("FLOAT", {"default": 5}),
@@ -96,7 +96,6 @@ class AniSora:
         world_size = int(os.getenv("WORLD_SIZE", 1))
         local_rank = int(os.getenv("LOCAL_RANK", 0))
         device = local_rank
-        _init_logging(rank)
     
         if offload_model is None:
             offload_model = False if world_size > 1 else True
@@ -128,20 +127,7 @@ class AniSora:
                 ring_degree=ring_size,
                 ulysses_degree=ulysses_size,
             )
-    
-        if use_prompt_extend:
-            if prompt_extend_method == "dashscope":
-                prompt_expander = DashScopePromptExpander(
-                    model_name=prompt_extend_model, is_vl="i2v" in task)
-            elif prompt_extend_method == "local_qwen":
-                prompt_expander = QwenPromptExpander(
-                    model_name=prompt_extend_model,
-                    is_vl="i2v" in task,
-                    device=rank)
-            else:
-                raise NotImplementedError(
-                    f"Unsupport prompt_extend_method: {prompt_extend_method}")
-    
+
         cfg = WAN_CONFIGS[task]
         if ulysses_size > 1:
             assert cfg.num_heads % ulysses_size == 0, f"`num_heads` must be divisible by `ulysses_size`."
@@ -152,92 +138,31 @@ class AniSora:
             base_seed = base_seed[0]
     
         if "t2v" in task or "t2i" in task:
-            opt_dir=image
-            with open(prompt,"r")as f:
-                lines=f.read().strip("\n").split("\n")
-            for idx,line in enumerate(lines):
-                save_file="%s/%s.mp4"%(opt_dir,idx)
-                prompt,image=line.split("@@")
-                image=image
-                prompt=prompt
+            
+            image=image
+            prompt=prompt
 
-                if use_prompt_extend:
-                    if rank == 0:
-                        prompt_output = prompt_expander(
-                            prompt,
-                            tar_lang=prompt_extend_target_lang,
-                            seed=base_seed)
-                        if prompt_output.status == False:
-                            input_prompt = prompt
-                        else:
-                            input_prompt = prompt_output.prompt
-                        input_prompt = [input_prompt]
-                    else:
-                        input_prompt = [None]
-                    if dist.is_initialized():
-                        dist.broadcast_object_list(input_prompt, src=0)
-                    prompt = input_prompt[0]
-    
-                wan_t2v = wan.WanT2V(
-                    config=cfg,
-                    checkpoint_dir=ckpt_dir,
-                    device_id=device,
-                    rank=rank,
-                    t5_fsdp=t5_fsdp,
-                    dit_fsdp=dit_fsdp,
-                    use_usp=(ulysses_size > 1 or ring_size > 1),
-                    t5_cpu=t5_cpu,
-                )
-
-                video = wan_t2v.generate(
-                    prompt,
-                    size=SIZE_CONFIGS[size],
-                    frame_num=frame_num,
-                    shift=sample_shift,
-                    sample_solver=sample_solver,
-                    sampling_steps=sample_steps,
-                    guide_scale=sample_guide_scale,
-                    seed=base_seed,
-                    offload_model=offload_model)
-        else:
-            if prompt is None:
-                prompt = EXAMPLE_PROMPT[task]["prompt"]
-            if image is None:
-                image = EXAMPLE_PROMPT[task]["image"]
-    
-            opt_dir=image
-            with open(args.prompt,"r",encoding="gbk")as f:
-                lines=f.read().strip("\n").split("\n")
-
-            wan_i2v = wan.WanI2V(
+            wan_t2v = wan.WanT2V(
                 config=cfg,
-                checkpoint_dir=.ckpt_dir,
+                checkpoint_dir=ckpt_dir,
                 device_id=device,
                 rank=rank,
                 t5_fsdp=t5_fsdp,
-                dit_fsdp=.dit_fsdp,
+                dit_fsdp=dit_fsdp,
                 use_usp=(ulysses_size > 1 or ring_size > 1),
                 t5_cpu=t5_cpu,
             )
-    
-            for idx,line in enumerate(lines):
-                prompt,image=line.split("@@")
-                image=image
-                prompt=prompt
-                img = Image.open(args.image).convert("RGB")
-                
-                if os.path.exists(save_file)==False:
-                    video = wan_i2v.generate(
-                        prompt,
-                        img,
-                        max_area=MAX_AREA_CONFIGS[size],
-                        frame_num=frame_num,
-                        shift=sample_shift,
-                        sample_solver=sample_solver,
-                        sampling_steps=sample_steps,
-                        guide_scale=sample_guide_scale,
-                        seed=base_seed,
-                        offload_model=offload_model)
+
+            video = wan_t2v.generate(
+                prompt,
+                size=SIZE_CONFIGS[size],
+                frame_num=frame_num,
+                shift=sample_shift,
+                sample_solver=sample_solver,
+                sampling_steps=sample_steps,
+                guide_scale=sample_guide_scale,
+                seed=base_seed,
+                offload_model=offload_model)
         
         return (video,)
 
