@@ -25,3 +25,12 @@ pip install -e .
 
 ## Model
 
+### Download Pretrained Weights:
+
+Please download AnisoraV2 checkpoints from [Huggingface](https://huggingface.co/IndexTeam/Index-anisora).
+
+```
+git lfs install
+git clone https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P
+```
+
