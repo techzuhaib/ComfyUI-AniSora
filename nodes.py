@@ -166,3 +166,34 @@ class AniSora:
         
         return (video,)
 
+
+class SaveAniSora:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "save_path": ("STRING", {"default": "output"}),
+                "video": ("VIDEO",),
+                "task": ("STRING", {"default": "t2v-14B"}),
+                "fps": ("INT", {"default": 16}),
+            }
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "save_model"
+    CATEGORY = "AniSora"
+
+    def save_model(self, save_path, video, task, fps):
+      
+        if "t2v" in task:
+            save_file = save_path + '.mp4'
+            cache_video(
+                tensor=video[None],
+                save_file=save_file,
+                fps=fps,
+                nrow=1,
+                normalize=True,
+                value_range=(-1, 1))
+      
+        return ()
+
