@@ -245,3 +245,25 @@ class LoadAniSoraModel:
         model = model_path
         return (model,)
 
+
+class Prompt:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "text": ("STRING", {
+                    "default": "Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.",
+                    "multiline": True
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("PROMPT",)
+    RETURN_NAMES = ("prompt",)
+    FUNCTION = "input_text"
+    CATEGORY = "AniSora"
+
+    def input_text(self, text):
+        prompt = text
+        return (prompt,)
+
