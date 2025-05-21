@@ -17,7 +17,9 @@ git clone https://github.com/Yuan-ManX/ComfyUI-AniSora.git
 3. Install dependencies:
 ```
 cd ComfyUI-AniSora
+pip install -r req-fastvideo.txt
 pip install -r requirements.txt
+pip install -e .
 ```
 
 
