@@ -225,3 +225,23 @@ def generate(args):
     logging.info("Finished.")
 
 
+
+
+class LoadAniSoraModel:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model_path": ("STRING", {"default": "./Wan2.1-I2V-14B-480P"}),
+            }
+        }
+
+    RETURN_TYPES = ("MODEL",)
+    RETURN_NAMES = ("model",)
+    FUNCTION = "load_model"
+    CATEGORY = "AniSora"
+
+    def load_model(self, model_path):
+        model = model_path
+        return (model,)
+
