@@ -12,7 +12,7 @@ import torch, random
 import torch.distributed as dist
 from PIL import Image
 
-import src.anisoraV2_gpu.wan
+
 from .src.anisoraV2_gpu.wan.configs import WAN_CONFIGS, SIZE_CONFIGS, MAX_AREA_CONFIGS, SUPPORTED_SIZES
 from .src.anisoraV2_gpu.wan.utils.prompt_extend import DashScopePromptExpander, QwenPromptExpander
 from .src.anisoraV2_gpu.wan.utils.utils import cache_video, cache_image, str2bool
